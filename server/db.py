@@ -10,7 +10,8 @@ def _build_database_url() -> str:
     user = os.environ.get("POSTGRES_USER", "postgres")
     password = os.environ.get("POSTGRES_PASSWORD", "postgres")
     db = os.environ.get("APP_DB_NAME", "mem0_app")
-    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
+    return f"postgresql://{user}:{password}@{host}/{db}?sslmode=require&channel_binding=require"
+    # return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
 
 
 engine = create_engine(_build_database_url(), pool_pre_ping=True)

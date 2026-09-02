@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import asyncio
 import logging
 import os
@@ -7,7 +11,6 @@ from typing import Any, Dict, List, Optional
 import telemetry
 from auth import ADMIN_API_KEY, AUTH_DISABLED, JWT_SECRET, require_admin, verify_auth
 from db import SessionLocal
-from dotenv import load_dotenv
 from errors import (
     UpstreamError,
     install_request_id_logging,
@@ -39,8 +42,6 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import func, select
 
 from mem0.exceptions import ValidationError as Mem0ValidationError
-
-load_dotenv()
 
 install_request_id_logging()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - [%(request_id)s] %(message)s")
@@ -128,14 +129,36 @@ DEFAULT_CONFIG = {
             "user": POSTGRES_USER,
             "password": POSTGRES_PASSWORD,
             "collection_name": POSTGRES_COLLECTION_NAME,
+            "embedding_model_dims": 1536,
+            "hnsw": True,
         },
     },
     "llm": {
         "provider": "openai",
-        "config": {"api_key": OPENAI_API_KEY, "temperature": 0.2, "model": DEFAULT_LLM_MODEL},
+        "config": {
+            "api_key": OPENAI_API_KEY,
+            "temperature": 0.2,
+            "model": DEFAULT_LLM_MODEL,
+        },
     },
-    "embedder": {"provider": "openai", "config": {"api_key": OPENAI_API_KEY, "model": DEFAULT_EMBEDDER_MODEL}},
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": OPENAI_API_KEY,
+            "model": DEFAULT_EMBEDDER_MODEL,
+            "embedding_dims": 1536,
+        },
+    },
     "history_db_path": HISTORY_DB_PATH,
+    "reranker": {
+        "provider": "llm_reranker",
+        "config": {
+            "provider": "openai",
+            "model": DEFAULT_LLM_MODEL,
+            "temperature": 0.0,
+            "max_tokens": 100,
+        },
+    },
 }
 
 
@@ -269,24 +292,25 @@ def _should_log_request(request: Request) -> bool:
 
 
 def _persist_request_log(method: str, path: str, status_code: int, latency_ms: float, auth_type: str) -> None:
-    session = SessionLocal()
+    pass
+    # session = SessionLocal()
 
-    try:
-        session.add(
-            RequestLog(
-                method=method,
-                path=path,
-                status_code=status_code,
-                latency_ms=latency_ms,
-                auth_type=auth_type,
-            )
-        )
-        session.commit()
-    except Exception:
-        session.rollback()
-        logging.exception("Failed to persist request log")
-    finally:
-        session.close()
+    # try:
+    #     session.add(
+    #         RequestLog(
+    #             method=method,
+    #             path=path,
+    #             status_code=status_code,
+    #             latency_ms=latency_ms,
+    #             auth_type=auth_type,
+    #         )
+    #     )
+    #     session.commit()
+    # except Exception:
+    #     session.rollback()
+    #     logging.exception("Failed to persist request log")
+    # finally:
+    #     session.close()
 
 
 @app.middleware("http")
